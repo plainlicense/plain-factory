@@ -1,0 +1,20 @@
+[project]
+name = "plain-factory"
+version = "0.1.0"
+description = "Plain License's modular license factory. Produces our many license versions from a single yaml input. We only employ free elf labor."
+readme = "README.md"
+authors = [{ name = "Adam Poulemanos", email = "07-framer.boons@icloud.com" }]
+requires-python = ">=3.13.4"
+dependencies = []
+
+[project.scripts]
+plain-factory = "plain_factory:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "gitpython>=3.1.44",
+]

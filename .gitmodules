@@ -1,0 +1,15 @@
+[submodule "license-list-XML"]
+	path = license-list-XML
+	url = https://github.com/spdx/license-list-XML.git
+  branch = main
+  ignore = all
+[submodule "license-list-data"]
+	path = license-list-data
+	url = https://github.com/spdx/license-list-data.git
+  branch = main
+  ignore = all
+[submodule "choosealicense.com"]
+	path = choosealicense.com
+	url = https://github.com/github/choosealicense.com.git
+  branch = gh-pages
+  ignore = all
