@@ -1,0 +1,105 @@
+#!/bin/bash
+# Defaults to simply initializing and updating submodules
+# Use --hard-reset to reset submodules to their original state; this will stash any changes in the repository and reset the submodules. If the sparse checkout isn't syncing correctly, use this option to reset the submodules.
+
+set -e
+
+# Default setup_mode is 0 (disabled)
+# Initialize flags
+declare -g hard_reset
+hard_reset=0
+
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  --hard-reset)
+    hard_reset=1
+    shift
+    ;;
+  *)
+    echo "updating submodules"
+    ;;
+  esac
+done
+
+# Add submodules and their properties
+submodule_names=("license-list-data" "choosealicense" "license-list-XML")
+
+submodule_url["license-list-data"]="https://github.com/spdx/license-list-data.git"
+submodule_branch["license-list-data"]="main"
+# NOTE: no path prefixes (/) for sparse checkout
+submodule_sparse_paths["license-list-data"]="json"
+
+# shellcheck disable=SC2034
+submodule_url["choosealicense"]="https://github.com/github/choosealicense.com.git"
+submodule_branch["choosealicense"]="gh-pages"
+# shellcheck disable=SC2034
+submodule_sparse_paths["choosealicense"]="_data _licenses"
+
+# shellcheck disable=SC2034
+submodule_url["license-list-XML"]="https://github.com/spdx/license-list-XML.git"
+submodule_branch["license-list-XML"]="main"
+# shellcheck disable=SC2034
+submodule_sparse_paths["license-list-XML"]="schema src"
+
+REPO_ROOT_ABS_PATH="$(git rev-parse --show-toplevel)"
+
+# Display error messages
+error_exit() {
+  echo "$1" >&2
+  exit 1
+}
+
+success_exit() {
+  echo "$1"
+  exit 0
+}
+
+update_submodules() {
+  cd "$REPO_ROOT_ABS_PATH"
+  git submodule update --init --recursive
+}
+
+stash_changes() {
+  cd "$REPO_ROOT_ABS_PATH"
+  git stash push -m "Stashing changes before updating submodules"
+}
+
+init_hard_reset() {
+  stash_changes || error_exit "Failed to stash changes"
+  for submodule in "${submodule_names[@]}"; do
+    cd "$REPO_ROOT_ABS_PATH/$submodule"
+    git checkout "${submodule_branch[$submodule]}" || error_exit "Failed to checkout branch ${submodule_branch[$submodule]}"
+    git reset --hard "origin/${submodule_branch[$submodule]}" || error_exit "Failed to reset to origin/${submodule_branch[$submodule]}"
+    git clean -fdx || error_exit "Failed to clean the submodule"
+  done
+}
+
+init_submodules() {
+  cd "$REPO_ROOT_ABS_PATH"
+  stash_changes || true
+  for submodule in "${submodule_names[@]}"; do
+    cd "$REPO_ROOT_ABS_PATH"
+    if [ ! -d "$submodule" ]; then
+      git submodule add -b "${submodule_branch[$submodule]}" -- "${submodule_url[$submodule]}" || "failed to init $submodule"
+      git submodule update --init
+      cd "$submodule" || continue
+      IFS=" " read -r -a sparse_paths <<<"${submodule_sparse_paths[$submodule]}"
+      git sparse-checkout set --cone --sparse-index -- "${sparse_paths[@]}" || continue
+      cd "$REPO_ROOT_ABS_PATH"
+    fi
+  done
+}
+
+main() {
+  if [[ $hard_reset -eq 1 ]]; then
+    init_hard_reset || error_exit "Failed to hard reset submodules"
+    success_exit "Submodules reset."
+  else
+    init_submodules || error_exit "failed to init submodules"
+    update_submodules || error_exit "Failed to update submodules"
+    echo "Submodules updated."
+  fi
+}
+
+main
