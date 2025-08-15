@@ -7,23 +7,23 @@ from functools import cached_property
 from os import PathLike
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import Annotated, ClassVar, Literal, LiteralString, NamedTuple, Self, cast
+from typing import Annotated, ClassVar, Literal, LiteralString, NamedTuple, Self, cast, List as TypeList, Dict, Any, Optional, Union
 from unittest import mock
 
 from plain_factory.factory._constants import (
     LINEBREAK,
     PARAGRAPH_BREAK,
     TAB,
-    Patterns,
+    PATTERNS,
     SPACE,
 )
-from plain_factory.factory._content_interface import ContentBase
+from plain_factory.factory._content_interface import ContentBase, Element, FormatType, LicenseElement
 from plain_factory.factory._paragraph import (
     Citation,
     Citations,
     Footnote,
     Footnotes,
-    Paragraph,
+    Paragraph as ParaClass,
 )
 
 
@@ -128,8 +128,7 @@ class Paragraphs(tuple):
 
     def markdown(self) -> str:
         """Returns the markdown representation of the paragraphs."""
-        pass
-
+        return self.rich_markdown()
 
 
 @dataclass(frozen=True, order=True, kw_only=True, slots=True)
@@ -169,7 +168,7 @@ class AdmonitionBlock(ContentBase):
         return f"{self.admonition.name}: {self.title.title()}" if self.title else f"{self.admonition.name}:"
 
 @dataclass(frozen=True, order=True, kw_only=True, slots=True)
-class Codeblock(ContentBase):
+class CodeBlock(ContentBase):
     """
     Represents a markdown code block with a specific language.
     """
@@ -259,6 +258,203 @@ class Definition(ContentBase):
         """
         start_prefix = f":{SPACE}{SPACE}{SPACE}"
         prefix = SPACE * 4
-
-        definition
         return dedent(f"{self.definition.strip()}")
+
+# Add missing classes needed by __init__.py
+@dataclass(frozen=True)
+class Block(ContentBase, Element):
+    """Block element in a document."""
+    content: str
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return self.content
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.content
+
+@dataclass(frozen=True)
+class DefinitionList(ContentBase, Element):
+    """Definition list element."""
+    items: TypeList["DefinitionListItem"]
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return "\n".join(item.to_markdown() for item in self.items)
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return "\n".join(item.to_plaintext() for item in self.items)
+
+@dataclass(frozen=True)
+class DefinitionListItem(ContentBase, Element):
+    """Definition list item."""
+    term: str
+    definition: str
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return f"{self.term}\n: {self.definition}"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return f"{self.term}: {self.definition}"
+
+@dataclass(frozen=True)
+class Heading(ContentBase, Element):
+    """Heading element."""
+    level: int
+    text: str
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return f"{'#' * self.level} {self.text}"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return f"{self.text.upper()}"
+
+@dataclass(frozen=True)
+class License(ContentBase, LicenseElement):
+    """License element."""
+    name: str
+    content: str
+
+    def to_format(self, format_type: FormatType) -> str:
+        """Convert to specified format."""
+        if format_type == FormatType.MARKDOWN:
+            return f"# {self.name}\n\n{self.content}"
+        elif format_type == FormatType.PLAINTEXT:
+            return f"{self.name.upper()}\n\n{self.content}"
+        elif format_type == FormatType.READER:
+            return f"# {self.name}\n\n{self.content}"
+        else:
+            return self.content
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {"name": self.name, "content": self.content}
+
+@dataclass(frozen=True)
+class List(ContentBase, Element):
+    """List element."""
+    items: TypeList["ListItem"]
+    ordered: bool = False
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        result = []
+        for i, item in enumerate(self.items, 1):
+            prefix = f"{i}." if self.ordered else "-"
+            result.append(f"{prefix} {item.to_markdown()}")
+        return "\n".join(result)
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        result = []
+        for i, item in enumerate(self.items, 1):
+            prefix = f"{i}." if self.ordered else "*"
+            result.append(f"{prefix} {item.to_plaintext()}")
+        return "\n".join(result)
+
+@dataclass(frozen=True)
+class ListItem(ContentBase, Element):
+    """List item element."""
+    content: str
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return self.content
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.content
+
+@dataclass(frozen=True)
+class Page(ContentBase, LicenseElement):
+    """Page element."""
+    title: str
+    sections: TypeList["Section"]
+
+    def to_format(self, format_type: FormatType) -> str:
+        """Convert to specified format."""
+        if format_type == FormatType.MARKDOWN:
+            return f"# {self.title}\n\n" + "\n\n".join(s.to_markdown() for s in self.sections)
+        elif format_type == FormatType.PLAINTEXT:
+            return f"{self.title.upper()}\n\n" + "\n\n".join(s.to_plaintext() for s in self.sections)
+        elif format_type == FormatType.READER:
+            return f"# {self.title}\n\n" + "\n\n".join(s.to_markdown() for s in self.sections)
+        else:
+            return self.title + "\n\n" + "\n\n".join(s.to_markdown() for s in self.sections)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "title": self.title,
+            "sections": [s.to_dict() for s in self.sections]
+        }
+
+@dataclass(frozen=True)
+class Paragraph(ContentBase, Element):
+    """Paragraph element."""
+    text: str
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return self.text
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.text
+
+@dataclass(frozen=True)
+class Section(ContentBase, Element):
+    """Section element."""
+    title: Optional[str]
+    content: TypeList[Element]
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        result = []
+        if self.title:
+            result.append(f"## {self.title}")
+        result.extend(item.to_markdown() for item in self.content)
+        return "\n\n".join(result)
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        result = []
+        if self.title:
+            result.append(f"{self.title.upper()}")
+        result.extend(item.to_plaintext() for item in self.content)
+        return "\n\n".join(result)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "title": self.title,
+            "content": [{"type": type(item).__name__, "content": item.to_markdown()} for item in self.content]
+        }
+
+@dataclass(frozen=True)
+class Tab(ContentBase, LicenseElement):
+    """Tab element."""
+    title: str
+    content: str
+    format_type: FormatType
+
+    def to_format(self, format_type: FormatType) -> str:
+        """Convert to specified format."""
+        if format_type == self.format_type:
+            return self.content
+        return ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "title": self.title,
+            "content": self.content,
+            "format_type": self.format_type
+        }
+
