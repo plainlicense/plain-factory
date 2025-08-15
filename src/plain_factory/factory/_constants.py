@@ -65,22 +65,8 @@ class Patterns:
     }
     _codeblock: ClassVar[PatternMap] = {
         "block": re.compile(
-            r"""
-    (
-    (?P<first_line>  # The first line of a code block
-        (?P<fence_start>```*)  # Start of code block, 3+ backticks
-            \s?
-        (?P<language> \w+ )?  # Optional language specifier
-            \s?
-        (?P<title> \"\w+\" | '\w+' )?  # Optional title in quotes
-    )
-        \n
-
-        (?P<content>.+?)  # Content of the code block
-        (?P<fence_end>?P=fence_start) # End of code block
-        )
-    """,
-            re.DOTALL | re.VERBOSE,
+            r"(?P<fence_start>```+)(?P<language>\w+)?(?P<content>.*?)(?P<fence_end>```+)",
+            re.DOTALL
         ),
         "inline": re.compile(
             r"(?P<fence_start>`)(?P<bang>[#][!])?(?P<lang>\w+)? ?(?P<content>.+?)(?P<fence_end>`)(?!`)"
@@ -137,7 +123,7 @@ class Patterns:
                                 (?P<tag_attrs>.*?)>
                                     (?P<content>.*?)
                             </
-                        (?P<end_tag>?P=tag_name)
+                        (?P=tag_name)
                             >
                         )
                     """,
