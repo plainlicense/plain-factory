@@ -17,7 +17,7 @@ from plain_factory.factory._constants import (
     PATTERNS,
     SPACE,
 )
-from plain_factory.factory._content_interface import ContentBase, Element, FormatType, LicenseElement
+from plain_factory.factory._content_interface import ContentBase, ElementProtocol as Element, FormatType, LicenseElement
 from plain_factory.factory._paragraph import (
     Citation,
     Citations,
