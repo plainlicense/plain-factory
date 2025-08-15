@@ -458,3 +458,30 @@ class Tab(ContentBase, LicenseElement):
             "format_type": self.format_type
         }
 
+@dataclass(frozen=True)
+class Text(ContentBase, Element):
+    """Text element."""
+    content: str
+    
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return self.content
+    
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.content
+
+@dataclass(frozen=True)
+class Title(ContentBase, Element):
+    """Title element."""
+    text: str
+    level: int = 1
+    
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return f"{'#' * self.level} {self.text}"
+    
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return f"{self.text.upper()}"
+
