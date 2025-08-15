@@ -172,6 +172,9 @@ class Patterns:
         self.year = type(self)._year  # noqa: SLF001
 
 
+# Create an instance of Patterns for export
+PATTERNS = Patterns()
+
 YEAR = datetime.now(UTC).strftime("%Y")
 
 # ================================================
