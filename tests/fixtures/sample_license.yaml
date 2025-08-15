@@ -1,0 +1,40 @@
+plain_name: Test License
+spdx_id: TEST-1.0
+original_name: Original Test License
+original_url: https://example.com/license
+original_organization: Test Organization
+original_version: "1.0"
+plain_version: "1.0.0"
+category: permissive
+license_description: A test license for testing purposes.
+reader_license_text: |
+  This is a test license text.
+  
+  It has multiple paragraphs.
+  
+  You can use this license for testing purposes.
+original_license_text: |
+  This is the original test license text.
+  
+  Copyright (c) 2025 Test Organization
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+link_in_original: false
+permissions:
+  - commercial-use
+  - modifications
+  - distribution
+  - private-use
+conditions:
+  - include-copyright
+limitations:
+  - liability
+  - warranty

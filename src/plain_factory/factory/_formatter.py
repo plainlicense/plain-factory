@@ -10,7 +10,7 @@ import re
 from textwrap import dedent, indent
 from typing import Literal
 
-from overrides.hooks._utils import wrap_text
+from plain_factory._utils import wrap_text
 
 type BlockType = Literal["admonition", "caption", "definition", "details", "html"]
 

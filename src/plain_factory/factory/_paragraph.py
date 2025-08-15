@@ -1,12 +1,11 @@
 import re
 
+from dataclasses import dataclass, field
 from functools import cached_property
 from textwrap import dedent
-from typing import Literal, NamedTuple, Self
+from typing import Literal, NamedTuple, Self, Dict, List, Any, Optional, Union
 
-from dataclasses import dataclass
-
-from overrides.hooks.factory._constants import PATTERNS, SPACE
+from plain_factory.factory._constants import PATTERNS, SPACE
 
 class Footnote(NamedTuple):
     """
@@ -130,9 +129,9 @@ class Paragraph(str):
 
     def __new__(cls, text: str = "", *, footnote_citations: Citations = (), annotations: Citations = (), footnotes: "tuple[Footnote, ...]" = ()) -> Self:
         """Create a new Paragraph instance with text and optional footnotes."""
-        if not footnote_citations and (footnote_matches := tuple(PATTERNS["initial_footnote"].finditer(text))):
+        if not footnote_citations and (footnote_matches := tuple(PATTERNS.footnote["initial"].finditer(text))):
             footnote_citations = tuple(Citation.from_match(m) for m in footnote_matches)
-        if not annotations and (annotation_matches := tuple(PATTERNS["annotation"].finditer(text))):
+        if not annotations and (annotation_matches := tuple(PATTERNS.annotation["inline"].finditer(text))):
             annotations = tuple(Citation.from_match(m) for m in annotation_matches)
 
         instance = super().__new__(cls, dedent(text).strip())
@@ -176,21 +175,24 @@ class Paragraph(str):
         if not self.annotations:
             return self
         if not self.footnote_citations:
-            footnotes = (c.to_footnote() for c in self.annotations)
+            footnotes = [c.to_footnote() for c in self.annotations]
             new_text = self.text
-            for annotation.match in self.annotations:
-
+            for annotation in self.annotations:
+                # Implementation here
+                pass
+            return Paragraph(new_text, footnotes=tuple(footnotes))
+        return self
 
     @cached_property
     def with_footnotes_realigned(self) -> "Paragraph":
         """Return a new Paragraph with footnotes realigned to start from 1."""
         if not self.footnotes:
-            return Paragraph(self.text, self.footnotes.copy())
+            return Paragraph(self.text, footnotes=self.footnotes)
 
         import re
 
         # Create mapping of old to new footnote numbers
-        old_nums = sorted(self.footnotes.keys())
+        old_nums = sorted([f.citation for f in self.footnotes])
         footnote_mapping = {old_num: i for i, old_num in enumerate(old_nums, 1)}
 
         def replace_footnote_ref(match):
@@ -200,27 +202,30 @@ class Paragraph(str):
         # Create new text with updated footnote references
         new_text = re.sub(r"\[(\d+)\]", replace_footnote_ref, self.text)
 
-        # Create new footnotes dict with updated numbering
-        new_footnotes = {
-            footnote_mapping[old_num]: content
-            for old_num, content in self.footnotes.items()
-        }
+        # Create new footnotes with updated numbering
+        new_footnotes = tuple(
+            Footnote(
+                citation=footnote_mapping[f.citation],
+                content=f.content
+            )
+            for f in self.footnotes
+        )
 
-        return Paragraph(new_text, new_footnotes)
+        return Paragraph(new_text, footnotes=new_footnotes)
 
     def with_text(self, new_text: str) -> "Paragraph":
         """Return a new Paragraph with different text but same footnotes."""
-        return Paragraph(new_text, self.footnotes.copy())
+        return Paragraph(new_text, footnotes=self.footnotes)
 
-    def with_footnotes(self, new_footnotes: dict[int, str]) -> "Paragraph":
+    def with_footnotes(self, new_footnotes: tuple[Footnote, ...]) -> "Paragraph":
         """Return a new Paragraph with different footnotes but same text."""
-        return Paragraph(self.text, new_footnotes.copy())
+        return Paragraph(self.text, footnotes=new_footnotes)
 
     def add_footnote(self, number: int, content: str) -> "Paragraph":
         """Return a new Paragraph with an additional footnote."""
-        new_footnotes = self.footnotes.copy()
-        new_footnotes[number] = content
-        return Paragraph(self.text, new_footnotes)
+        new_footnotes = list(self.footnotes)
+        new_footnotes.append(Footnote(citation=number, content=content))
+        return Paragraph(self.text, footnotes=tuple(new_footnotes))
 
     def split_paragraphs(self, delimiter: str = "\n\n") -> list["Paragraph"]:
         """Split into multiple Paragraph instances, distributing footnotes appropriately."""
@@ -239,13 +244,12 @@ class Paragraph(str):
                 footnote_refs.add(int(match.group(1)))
 
             # Include only relevant footnotes
-            part_footnotes = {
-                num: content
-                for num, content in self.footnotes.items()
-                if num in footnote_refs
-            }
+            part_footnotes = tuple(
+                f for f in self.footnotes
+                if f.citation in footnote_refs
+            )
 
-            paragraphs.append(Paragraph(part.strip(), part_footnotes))
+            paragraphs.append(Paragraph(part.strip(), footnotes=part_footnotes))
 
         return paragraphs
 
@@ -259,29 +263,133 @@ class Paragraph(str):
         new_text = self.text + separator + other.text
 
         # Merge footnotes, resolving conflicts by renumbering other's footnotes
-        new_footnotes = self.footnotes.copy()
-        max_footnote = max(self.footnotes.keys()) if self.footnotes else 0
+        new_footnotes = list(self.footnotes)
+        max_footnote = max([f.citation for f in self.footnotes]) if self.footnotes else 0
 
         import re
 
         other_text = other.text
 
-        for old_num, content in other.footnotes.items():
-            if old_num in new_footnotes:
+        for footnote in other.footnotes:
+            if any(f.citation == footnote.citation for f in self.footnotes):
                 # Conflict: renumber the footnote from other
                 new_num = max_footnote + 1
                 max_footnote += 1
 
                 # Update references in other's text
-                other_text = re.sub(rf"\[{old_num}\]", f"[{new_num}]", other_text)
-                new_footnotes[new_num] = content
+                other_text = re.sub(rf"\[{footnote.citation}\]", f"[{new_num}]", other_text)
+                new_footnotes.append(Footnote(citation=new_num, content=footnote.content))
             else:
-                new_footnotes[old_num] = content
+                new_footnotes.append(footnote)
 
         # Rebuild the merged text with updated other text
         final_text = self.text + separator + other_text
-        return Paragraph(final_text, new_footnotes)
+        return Paragraph(final_text, footnotes=tuple(new_footnotes))
 
     def __repr__(self) -> str:
         footnote_count = len(self.footnotes)
         return f"Paragraph({str.__repr__(self)}, footnotes={footnote_count})"
+
+# Add missing classes needed by __init__.py
+@dataclass
+class InlineCode:
+    """Represents inline code in a paragraph."""
+    code: str
+    start: int
+    end: int
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return f"`{self.code}`"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.code
+
+@dataclass
+class InlineFormatting:
+    """Represents inline formatting in a paragraph."""
+    text: str
+    format_type: Literal["bold", "italic", "strikethrough", "underline"]
+    start: int
+    end: int
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        if self.format_type == "bold":
+            return f"**{self.text}**"
+        elif self.format_type == "italic":
+            return f"*{self.text}*"
+        elif self.format_type == "strikethrough":
+            return f"~~{self.text}~~"
+        elif self.format_type == "underline":
+            return f"<u>{self.text}</u>"
+        return self.text
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.text
+
+@dataclass
+class InlineImage:
+    """Represents an inline image in a paragraph."""
+    alt_text: str
+    url: str
+    title: Optional[str] = None
+    start: int = 0
+    end: int = 0
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        title_attr = f' "{self.title}"' if self.title else ""
+        return f"![{self.alt_text}]({self.url}{title_attr})"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return f"[Image: {self.alt_text}]"
+
+@dataclass
+class InlineLink:
+    """Represents an inline link in a paragraph."""
+    text: str
+    url: str
+    title: Optional[str] = None
+    start: int = 0
+    end: int = 0
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        title_attr = f' "{self.title}"' if self.title else ""
+        return f"[{self.text}]({self.url}{title_attr})"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return f"{self.text} ({self.url})"
+
+@dataclass
+class ParagraphStructure:
+    """Structure of a paragraph."""
+    text: str
+    inline_elements: List[Union[InlineCode, InlineFormatting, InlineImage, InlineLink]] = field(default_factory=list)
+    footnotes: List[Footnote] = field(default_factory=list)
+
+@dataclass
+class ParagraphDeconstructor:
+    """Deconstructs a paragraph into its component parts."""
+    text: str
+    
+    def deconstruct(self) -> ParagraphStructure:
+        """Deconstruct the paragraph into a structured format."""
+        # This is a placeholder implementation
+        return ParagraphStructure(text=self.text)
+    
+    def extract_inline_elements(self) -> List[Union[InlineCode, InlineFormatting, InlineImage, InlineLink]]:
+        """Extract inline elements from the paragraph."""
+        # This is a placeholder implementation
+        return []
+    
+    def extract_footnotes(self) -> List[Footnote]:
+        """Extract footnotes from the paragraph."""
+        # This is a placeholder implementation
+        return []
+

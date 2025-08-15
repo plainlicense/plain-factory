@@ -37,8 +37,8 @@ project_root = Path(__file__).parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from overrides.hooks._utils import Status, find_repo_root, wrap_text
-from overrides.hooks.hook_logger import get_logger
+from plain_factory._utils import Status, find_repo_root, wrap_text
+from plain_factory.logger import get_logger
 
 
 # Change logging level here

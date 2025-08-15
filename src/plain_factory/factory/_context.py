@@ -1,34 +1,34 @@
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any
+
+from plain_factory.factory._content_interface import FormatType
 
 @dataclass
-class RenderContext:
-    """Context object passed to elements during rendering"""
-
-    format_type: FormatType  # READER, GITHUB, PLAINTEXT, etc.
-    elements: dict[str, DocumentElement]  # All document elements by ID
-    relationships: RelationshipTracker  # Cross-reference resolver
-
-    # Format-specific settings
+class LicenseContext:
+    """Context object for license rendering."""
+    format_type: FormatType
+    elements: Dict[str, Any] = field(default_factory=dict)
     footnote_counter: int = 1
-    collected_footnotes: list[FootnoteElement] = field(default_factory=list)
+    collected_footnotes: List[Any] = field(default_factory=list)
+    current_depth: int = 0
+    parent_context: Optional[str] = None
 
-    # Rendering state
-    current_depth: int = 0  # For nested elements
-    parent_context: str | None = None  # e.g., "admonition", "codeblock"
-
-    # Format-specific helpers
     def should_inline_footnotes(self) -> bool:
+        """Determine if footnotes should be inlined."""
         return self.format_type == FormatType.READER
 
     def get_footnote_style(self) -> str:
+        """Get the footnote style based on format type."""
         return (
             "markdown"
-            if self.format_type in [FormatType.GITHUB, FormatType.READER]
+            if self.format_type in [FormatType.MARKDOWN, FormatType.READER]
             else "plaintext"
         )
 
-    def register_footnote(self, footnote: FootnoteElement) -> int:
-        """Register footnote for end-of-document collection"""
+    def register_footnote(self, footnote: Any) -> int:
+        """Register a footnote and return its index."""
         self.collected_footnotes.append(footnote)
         current = self.footnote_counter
         self.footnote_counter += 1
         return current
+

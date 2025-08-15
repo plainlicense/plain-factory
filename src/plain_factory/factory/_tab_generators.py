@@ -6,13 +6,23 @@ This module contains individual generators for each type of license tab
 """
 
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol, Dict, Any, Optional
 
-from overrides.hooks._utils import wrap_text
+from plain_factory._utils import wrap_text
 
 
 if TYPE_CHECKING:
-    from overrides.hooks.factory._formatter import Formatter
+    from plain_factory.factory._formatter import Formatter
+
+
+class TabGenerator(Protocol):
+    """Protocol for tab generators."""
+    formatter: "Formatter"
+    icon: str
+
+    def generate(self, *args, **kwargs) -> str:
+        """Generate tab content."""
+        ...
 
 
 class BaseTabGenerator:
@@ -129,7 +139,7 @@ class EmbedTabGenerator(BaseTabGenerator):
 class TabGeneratorFactory:
     """Factory for creating tab generators."""
 
-    def __init__(self, formatter: "Formatter", icon_map: dict[str, str]):
+    def __init__(self, formatter: "Formatter", icon_map: Dict[str, str]):
         """
         Initialize the factory.
 
@@ -163,3 +173,4 @@ class TabGeneratorFactory:
     def create_embed_generator(self) -> EmbedTabGenerator:
         """Create an embed tab generator."""
         return EmbedTabGenerator(self.formatter, self.icon_map["embed"])
+

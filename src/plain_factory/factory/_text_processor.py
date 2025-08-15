@@ -7,8 +7,10 @@ footnote conversion, and plaintext generation.
 
 from re import Match
 from textwrap import dedent
+from dataclasses import dataclass
+from typing import Dict, Any, Optional
 
-from overrides.hooks.factory._constants import PATTERNS, YEAR
+from plain_factory.factory._constants import PATTERNS, YEAR
 
 
 def replace_year(text: str) -> str:
@@ -62,7 +64,7 @@ def process_definitions(text: str, *, plaintext: bool = False) -> str:
     # Remove any remaining formatting classes
     if matches := PATTERNS["format_class"].finditer(text):
         for match in matches:
-            text = text.replace(match, "")
+            text = text.replace(match.group(0), "")
     return text
 
 def transform_text_to_footnotes(text: str) -> str:
@@ -142,3 +144,33 @@ def process_markdown_to_plaintext(text: str) -> str:
     text = PATTERNS["link"].sub(r"\1 (\2)", text)  # Handle links
     text = PATTERNS["image"].sub(r"\1 (\2)", text)  # Handle images
     return PATTERNS["code"].sub(r"===\1===", text)  # Remove code blocks
+
+@dataclass
+class TextProcessor:
+    """Processes text for various formats."""
+    
+    def process_text(self, text: str, format_type: str) -> str:
+        """Process text based on format type."""
+        if format_type == "markdown":
+            return process_mkdocs_to_markdown(text)
+        elif format_type == "plaintext":
+            return process_markdown_to_plaintext(text)
+        else:
+            return text
+    
+    def replace_placeholders(self, text: str, replacements: Dict[str, Any]) -> str:
+        """Replace placeholders in text with values from replacements dict."""
+        result = text
+        for key, value in replacements.items():
+            placeholder = f"{{{key}}}"
+            result = result.replace(placeholder, str(value))
+        return result
+    
+    def transform_footnotes(self, text: str) -> str:
+        """Transform annotations to footnotes."""
+        return transform_text_to_footnotes(text)
+    
+    def process_definitions(self, text: str, plaintext: bool = False) -> str:
+        """Process definitions in text."""
+        return process_definitions(text, plaintext=plaintext)
+
