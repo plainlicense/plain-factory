@@ -1,10 +1,9 @@
 import re
 
+from dataclasses import dataclass, field
 from functools import cached_property
 from textwrap import dedent
-from typing import Literal, NamedTuple, Self
-
-from dataclasses import dataclass
+from typing import Literal, NamedTuple, Self, Dict, List, Any, Optional, Union
 
 from plain_factory.factory._constants import PATTERNS, SPACE
 
@@ -290,4 +289,107 @@ class Paragraph(str):
     def __repr__(self) -> str:
         footnote_count = len(self.footnotes)
         return f"Paragraph({str.__repr__(self)}, footnotes={footnote_count})"
+
+# Add missing classes needed by __init__.py
+@dataclass
+class InlineCode:
+    """Represents inline code in a paragraph."""
+    code: str
+    start: int
+    end: int
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        return f"`{self.code}`"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.code
+
+@dataclass
+class InlineFormatting:
+    """Represents inline formatting in a paragraph."""
+    text: str
+    format_type: Literal["bold", "italic", "strikethrough", "underline"]
+    start: int
+    end: int
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        if self.format_type == "bold":
+            return f"**{self.text}**"
+        elif self.format_type == "italic":
+            return f"*{self.text}*"
+        elif self.format_type == "strikethrough":
+            return f"~~{self.text}~~"
+        elif self.format_type == "underline":
+            return f"<u>{self.text}</u>"
+        return self.text
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return self.text
+
+@dataclass
+class InlineImage:
+    """Represents an inline image in a paragraph."""
+    alt_text: str
+    url: str
+    title: Optional[str] = None
+    start: int = 0
+    end: int = 0
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        title_attr = f' "{self.title}"' if self.title else ""
+        return f"![{self.alt_text}]({self.url}{title_attr})"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return f"[Image: {self.alt_text}]"
+
+@dataclass
+class InlineLink:
+    """Represents an inline link in a paragraph."""
+    text: str
+    url: str
+    title: Optional[str] = None
+    start: int = 0
+    end: int = 0
+
+    def to_markdown(self) -> str:
+        """Convert to markdown."""
+        title_attr = f' "{self.title}"' if self.title else ""
+        return f"[{self.text}]({self.url}{title_attr})"
+
+    def to_plaintext(self) -> str:
+        """Convert to plaintext."""
+        return f"{self.text} ({self.url})"
+
+@dataclass
+class ParagraphStructure:
+    """Structure of a paragraph."""
+    text: str
+    inline_elements: List[Union[InlineCode, InlineFormatting, InlineImage, InlineLink]] = field(default_factory=list)
+    footnotes: List[Footnote] = field(default_factory=list)
+
+@dataclass
+class ParagraphDeconstructor:
+    """Deconstructs a paragraph into its component parts."""
+    text: str
+    
+    def deconstruct(self) -> ParagraphStructure:
+        """Deconstruct the paragraph into a structured format."""
+        # This is a placeholder implementation
+        return ParagraphStructure(text=self.text)
+    
+    def extract_inline_elements(self) -> List[Union[InlineCode, InlineFormatting, InlineImage, InlineLink]]:
+        """Extract inline elements from the paragraph."""
+        # This is a placeholder implementation
+        return []
+    
+    def extract_footnotes(self) -> List[Footnote]:
+        """Extract footnotes from the paragraph."""
+        # This is a placeholder implementation
+        return []
 
