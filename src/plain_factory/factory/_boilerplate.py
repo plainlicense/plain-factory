@@ -1,4 +1,9 @@
+"""
+Boilerplate text and functions for license generation.
+"""
+
 from textwrap import dedent
+from typing import Any, Dict, Literal, Optional, Tuple
 
 
 def get_not_advice_text(issues_link: str, edit_link: str) -> tuple[str, str]:
@@ -9,6 +14,7 @@ def get_not_advice_text(issues_link: str, edit_link: str) -> tuple[str, str]:
         dedent(f"""We are normal people making licenses accessible for everyone. We hope that our plain language helps you and anyone else understand this license  (including lawyers). If you see a mistake or want to suggest a change, please [submit an issue on GitHub]({issues_link} "Submit an issue on GitHub") or [edit this page]({edit_link} "edit on GitHub")."""
         )
     )
+
 
 def get_not_official_text(plain_license: str, original_license: str | None = None, original_organization: str | None = None, original_url: str | None = None) -> tuple[str] | tuple[str,str]:
     """Returns the "not official" disclaimer text for the license."""
@@ -24,10 +30,73 @@ def get_not_official_text(plain_license: str, original_license: str | None = Non
         """.strip()),
     )
 
+
 def get_embed_link(
     embed_url: str,
     title: str,
     page_url: str,
-) -> tuple:
-    # TODO: Add embed link
-    pass
+) -> tuple[str, str]:
+    """Returns the embed link and instructions for the license."""
+    embed_code = f'<iframe src="{embed_url}" title="{title}" width="100%" height="500px" frameborder="0"></iframe>'
+    return (
+        embed_code,
+        f"For more details, visit the [full license page]({page_url})."
+    )
+
+
+def get_boilerplate(meta: Dict[str, Any]) -> str:
+    """Returns the boilerplate text for the license."""
+    return dedent(f"""
+    # {meta.get('plain_name', 'License')}
+
+    {meta.get('license_description', '')}
+    """).strip()
+
+
+def get_disclaimer_block(meta: Dict[str, Any], has_official: bool, not_advice_text: str, not_official_text: str) -> str:
+    """Returns the disclaimer block for the license."""
+    disclaimer = f"## Disclaimer\n\n{not_advice_text}\n\n"
+    if has_official:
+        disclaimer += f"{not_official_text}\n\n"
+    return disclaimer.strip()
+
+
+def get_header_block(kind: Literal["reader", "markdown", "plaintext"], meta: Dict[str, Any], plain_name: str, plain_version: str) -> str:
+    """Returns the header block for the license."""
+    if kind == "plaintext":
+        return dedent(f"""
+        {plain_name} License v{plain_version}
+        ===================================
+
+        Plain License: {meta.get('plain_name', '')}
+        Original License: {meta.get('original_name', '')}
+        """).strip()
+    
+    return dedent(f"""
+    # {plain_name} License v{plain_version}
+
+    **Plain License**: {meta.get('plain_name', '')}  
+    **Original License**: {meta.get('original_name', '')}
+    """).strip()
+
+
+def interpretation_block(kind: Literal["reader", "markdown", "plaintext"], meta: Dict[str, Any], has_official: bool, title: str, interpretation_text: Optional[str] = None) -> str:
+    """Returns the interpretation block for the license."""
+    if not has_official:
+        return ""
+    
+    if kind == "plaintext":
+        if interpretation_text:
+            return dedent(f"""
+            ## Interpretation
+
+            {interpretation_text}
+            """).strip()
+        return ""
+    
+    return dedent(f"""
+    ## Interpretation
+
+    {meta.get('interpretation_text', '')}
+    """).strip()
+
