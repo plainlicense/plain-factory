@@ -36,7 +36,7 @@ class Patterns:
         r"""\s*(?P<abbrev_block>\*\[(?P<abbrev>.+?)\]:)\s*(?P<definition>.+?)\n""",
     )
     _annotation: ClassVar[PatternMap] = {
-        "inline": re.compile(r"(?<!\n|  )(?P<citation>\((?P<num>[1-9])\))"),
+        "inline": re.compile(r"(?P<citation>\((?P<num>[1-9])\))"),
         "block": re.compile(
             r"(?P<citation>(?P<num>[1-9])\.)\s", re.MULTILINE | re.DOTALL
         ),
@@ -75,6 +75,7 @@ class Patterns:
         (?P<title> \"\w+\" | '\w+' )?  # Optional title in quotes
     )
         \n
+
         (?P<content>.+?)  # Content of the code block
         (?P<fence_end>?P=fence_start) # End of code block
         )
@@ -145,9 +146,9 @@ class Patterns:
     }
     _links: ClassVar[PatternMap] = {
         "cited_ref": re.compile(
-            r"""\s*(?P<ref>\[(?P<name>.*?)\])\s*<?(?P<url>.*?)>?\s*(?P<title>["']?.*?["']?)?\s*""", re.MULTILINE
+            r"""\s*(?P<ref>\[(?P<n>.*?)\])\s*<?(?P<url>.*?)>?\s*(?P<title>["']?.*?["']?)?\s*""", re.MULTILINE
         ),
-        "inline_ref": re.compile(r"\s*(?P<text_block>\[?(?P<text>.*?)\])(?P<ref>\[(?P<name>.*?)\])", re.MULTILINE),
+        "inline_ref": re.compile(r"\s*(?P<text_block>\[?(?P<text>.*?)\])(?P<ref>\[(?P<n>.*?)\])", re.MULTILINE),
         "inline": re.compile(
             r"(?P<text_tag>\[(?P<text>.*?)\]\((?P<url>.*?)\s?(?P<title>.*?)?\))", re.MULTILINE
         ),
@@ -238,6 +239,7 @@ EMBED_STYLE = dedent("""
 """
 Constants for formatting and layout in the license factory.
 I found that without them, it was easy for phantom formatting issues to creep in. This paranoia is what also drives the excessive use of `dedent` in the codebase.
+
 """
 
 SNIPPET = "--8<--"
@@ -252,3 +254,4 @@ PARAGRAPH_BREAK = LINEBREAK * 2  # Two line breaks for paragraph separation
 
 # Divider for page sections in plaintext, also a yaml divider
 PAGE_DIVIDER = dedent("---").strip()
+
