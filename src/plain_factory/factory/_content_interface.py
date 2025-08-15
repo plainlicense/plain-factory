@@ -5,7 +5,7 @@ from enum import IntEnum
 from typing import Any
 from uuid import uuid4
 
-from overrides.hooks.factory._constants import PAGE_DIVIDER
+from plain_factory.factory._constants import PAGE_DIVIDER
 
 
 class Element(IntEnum):

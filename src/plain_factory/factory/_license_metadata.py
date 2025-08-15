@@ -15,7 +15,7 @@ from typing import Any, Literal
 
 from mkdocs.structure.pages import Page
 
-from overrides.hooks._utils import Status, find_repo_root
+from plain_factory._utils import Status, find_repo_root
 
 
 def load_json(path: Path) -> dict[str, Any]:

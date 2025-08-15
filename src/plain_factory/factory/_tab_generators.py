@@ -8,11 +8,11 @@ This module contains individual generators for each type of license tab
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
-from overrides.hooks._utils import wrap_text
+from plain_factory._utils import wrap_text
 
 
 if TYPE_CHECKING:
-    from overrides.hooks.factory._formatter import Formatter
+    from plain_factory.factory._formatter import Formatter
 
 
 class BaseTabGenerator:

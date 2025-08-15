@@ -1,5 +1,5 @@
 """
-Utility functions for hooks.
+Utility functions for plain-factory.
 """
 
 import os
@@ -21,7 +21,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 if TYPE_CHECKING:
-    from overrides.hooks.license_factory import LicenseContent
+    from plain_factory.license_factory import LicenseContent
 
 
 type MkDocsCommand = Literal["gh-deploy", "serve", "build"]

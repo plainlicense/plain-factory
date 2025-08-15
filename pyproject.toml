@@ -5,16 +5,99 @@ description = "Plain License's modular license factory. Produces our many licens
 readme = "README.md"
 authors = [{ name = "Adam Poulemanos", email = "07-framer.boons@icloud.com" }]
 requires-python = ">=3.13.4"
-dependencies = []
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Text Processing :: Markup",
+]
+dependencies = [
+    "ez-yaml>=1.2.0",
+    "jinja2>=3.1.2",
+    "mkdocs>=1.5.3",
+    "funcy>=2.0",
+    "pymdown-extensions>=10.5",
+    "markdown>=3.5",
+    "pyyaml>=6.0.1",
+    "rich>=13.6.0",
+    "typer>=0.9.0",
+]
 
 [project.scripts]
-plain-factory = "plain_factory:main"
+plain-factory = "plain_factory.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/plainlicense/plain-factory"
+Issues = "https://github.com/plainlicense/plain-factory/issues"
+Documentation = "https://github.com/plainlicense/plain-factory#readme"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[dependency-groups]
-dev = [
+[tool.hatch.build.targets.wheel]
+packages = ["src/plain_factory"]
+
+[tool.hatch.envs.default]
+dependencies = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.hatch.envs.dev]
+dependencies = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "mypy",
     "gitpython>=3.1.44",
 ]
+
+[tool.hatch.envs.dev.scripts]
+test = "pytest {args:tests}"
+test-cov = "pytest --cov=plain_factory {args:tests}"
+lint = "ruff check ."
+format = "ruff format ."
+typecheck = "mypy src"
+all = ["lint", "format", "typecheck", "test-cov"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+select = ["E", "F", "B", "I", "N", "UP", "ANN", "COM", "C4", "ISC", "ICN", "G", "PIE", "T20", "PT", "RET", "SIM", "ARG", "ERA", "PD", "PGH", "PL", "TRY", "RUF"]
+ignore = ["ANN101", "ANN102", "ANN401", "COM812", "ISC001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+[tool.ruff.isort]
+known-first-party = ["plain_factory"]
+
+[tool.ruff.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+python_classes = "Test*"
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true

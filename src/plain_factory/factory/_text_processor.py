@@ -8,7 +8,7 @@ footnote conversion, and plaintext generation.
 from re import Match
 from textwrap import dedent
 
-from overrides.hooks.factory._constants import PATTERNS, YEAR
+from plain_factory.factory._constants import PATTERNS, YEAR
 
 
 def replace_year(text: str) -> str:

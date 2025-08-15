@@ -10,15 +10,15 @@ from textwrap import dedent, indent
 from typing import Annotated, ClassVar, Literal, LiteralString, NamedTuple, Self, cast
 from unittest import mock
 
-from overrides.hooks.factory._constants import (
+from plain_factory.factory._constants import (
     LINEBREAK,
     PARAGRAPH_BREAK,
     TAB,
     Patterns,
     SPACE,
 )
-from overrides.hooks.factory._content_interface import ContentBase
-from overrides.hooks.factory._paragraph import (
+from plain_factory.factory._content_interface import ContentBase
+from plain_factory.factory._paragraph import (
     Citation,
     Citations,
     Footnote,

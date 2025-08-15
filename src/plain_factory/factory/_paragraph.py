@@ -6,7 +6,7 @@ from typing import Literal, NamedTuple, Self
 
 from dataclasses import dataclass
 
-from overrides.hooks.factory._constants import PATTERNS, SPACE
+from plain_factory.factory._constants import PATTERNS, SPACE
 
 class Footnote(NamedTuple):
     """

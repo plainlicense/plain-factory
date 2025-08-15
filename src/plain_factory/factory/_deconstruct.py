@@ -3,7 +3,7 @@ This is where we take everything apart.
 """
 from dataclasses import dataclass
 from typing import Any, NamedTuple
-from overrides.hooks.factory._constants import (
+from plain_factory.factory._constants import (
     LINEBREAK,
     PARAGRAPH_BREAK,
     PATTERNS,
